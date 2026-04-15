@@ -1,0 +1,108 @@
+name: docflow
+region: nyc
+
+services:
+  - name: backend
+    github:
+      repo: Peppo1710/PreDusk-Assignment-
+      branch: main
+      deploy_on_push: true
+    source_dir: backend
+    dockerfile_path: Dockerfile
+    http_port: 8000
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    health_check:
+      http_path: /api/health
+    envs:
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        value: ${db.DATABASE_URL}
+      - key: REDIS_URL
+        scope: RUN_TIME
+        value: ${redis.REDIS_URL}
+      - key: CELERY_BROKER_URL
+        scope: RUN_TIME
+        value: ${redis.REDIS_URL}
+      - key: CELERY_RESULT_BACKEND
+        scope: RUN_TIME
+        value: ${redis.REDIS_URL}
+      - key: SECRET_KEY
+        scope: RUN_TIME
+        type: SECRET
+        value: CHANGE_ME_TO_A_RANDOM_SECRET
+      - key: ALGORITHM
+        scope: RUN_TIME
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        scope: RUN_TIME
+        value: "1440"
+      - key: BACKEND_CORS_ORIGINS
+        scope: RUN_TIME
+        value: ${APP_URL}
+      - key: STORAGE_BACKEND
+        scope: RUN_TIME
+        value: local
+      - key: UPLOAD_DIR
+        scope: RUN_TIME
+        value: ./uploads
+      - key: MAX_FILE_SIZE_MB
+        scope: RUN_TIME
+        value: "50"
+
+  - name: frontend
+    github:
+      repo: Peppo1710/PreDusk-Assignment-
+      branch: main
+      deploy_on_push: true
+    source_dir: frontend
+    dockerfile_path: Dockerfile
+    http_port: 3000
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    build_command: ""
+    envs:
+      - key: NEXT_PUBLIC_API_URL
+        scope: BUILD_TIME
+        value: ${backend.PUBLIC_URL}
+      - key: NEXT_PUBLIC_APP_NAME
+        scope: BUILD_TIME
+        value: DocFlow
+
+workers:
+  - name: worker
+    github:
+      repo: Peppo1710/PreDusk-Assignment-
+      branch: main
+      deploy_on_push: true
+    source_dir: backend
+    dockerfile_path: Dockerfile.worker
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    envs:
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        value: ${db.DATABASE_URL}
+      - key: REDIS_URL
+        scope: RUN_TIME
+        value: ${redis.REDIS_URL}
+      - key: CELERY_BROKER_URL
+        scope: RUN_TIME
+        value: ${redis.REDIS_URL}
+      - key: CELERY_RESULT_BACKEND
+        scope: RUN_TIME
+        value: ${redis.REDIS_URL}
+      - key: SECRET_KEY
+        scope: RUN_TIME
+        type: SECRET
+        value: ${backend.SECRET_KEY}
+
+databases:
+  - name: db
+    engine: PG
+    production: false
+    version: "16"
+  - name: redis
+    engine: REDIS
+    production: false
+    version: "7"
