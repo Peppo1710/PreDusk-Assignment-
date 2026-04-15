@@ -10,6 +10,7 @@ services:
     name: docflow-redis
     plan: free
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
 
   # ── FastAPI Backend ──────────────────────────────────────────────────
   - type: web
@@ -18,7 +19,6 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     plan: free
-    startCommand: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
@@ -59,10 +59,9 @@ services:
   - type: worker
     name: docflow-worker
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
+    dockerfilePath: ./backend/Dockerfile.worker
     dockerContext: ./backend
     plan: free
-    startCommand: celery -A app.workers.celery_app worker --loglevel=info --queues=documents --concurrency=2
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -85,6 +84,7 @@ services:
           property: connectionString
       - key: SECRET_KEY
         fromService:
+          type: web
           name: docflow-backend
           envVarKey: SECRET_KEY
 
