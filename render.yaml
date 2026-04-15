@@ -1,0 +1,104 @@
+databases:
+  - name: docflow-postgres
+    databaseName: docflow_db
+    user: docflow_user
+    plan: free
+
+services:
+  # ── Redis ────────────────────────────────────────────────────────────
+  - type: redis
+    name: docflow-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+  # ── FastAPI Backend ──────────────────────────────────────────────────
+  - type: web
+    name: docflow-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    startCommand: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: docflow-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: docflow-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: docflow-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: docflow-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "1440"
+      - key: BACKEND_CORS_ORIGINS
+        value: "*"
+      - key: STORAGE_BACKEND
+        value: local
+      - key: UPLOAD_DIR
+        value: ./uploads
+      - key: MAX_FILE_SIZE_MB
+        value: "50"
+
+  # ── Celery Worker ────────────────────────────────────────────────────
+  - type: worker
+    name: docflow-worker
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    startCommand: celery -A app.workers.celery_app worker --loglevel=info --queues=documents --concurrency=2
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: docflow-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: docflow-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: docflow-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: docflow-redis
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          name: docflow-backend
+          envVarKey: SECRET_KEY
+
+  # ── Next.js Frontend ─────────────────────────────────────────────────
+  - type: web
+    name: docflow-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://docflow-backend.onrender.com
+      - key: NEXT_PUBLIC_APP_NAME
+        value: DocFlow
+      - key: PORT
+        value: "3000"
