@@ -1,0 +1,24 @@
+DocFlow Sample Document — Invoice
+==================================
+
+Invoice Number: INV-2026-0117
+Date: April 14, 2026
+Vendor: Nexus Software Solutions Pvt. Ltd.
+Client: Horizon Analytics Inc.
+
+Line Items:
+-----------
+1. Enterprise API Subscription (Annual)   $5,500.00
+2. Data Storage & Backup (Q1)             $1,450.00
+3. On-site Consultation (12h)             $1,440.00
+
+Subtotal:  $8,390.00
+Tax (18%): $1,510.20
+Total Due: $9,900.20
+
+Payment Terms: Net 45
+Bank: HDFC Bank  IFSC HDFC0001234  Acc: 50100987654321
+
+Notes:
+This invoice covers Q1 2026 services as per contract #CTR-2026-0041.
+Please reference the invoice number on your payment.
