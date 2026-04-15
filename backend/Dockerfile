@@ -24,6 +24,9 @@ RUN mkdir -p /app/uploads
 RUN useradd -m -u 1000 docflow && chown -R docflow:docflow /app
 USER docflow
 
+COPY start.sh .
+RUN chmod +x start.sh
+
 EXPOSE 8000
 
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["./start.sh"]

@@ -12,7 +12,7 @@ services:
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []
 
-  # ── FastAPI Backend ──────────────────────────────────────────────────
+  # ── FastAPI Backend + Celery Worker (combined for free tier) ────────
   - type: web
     name: docflow-backend
     runtime: docker
@@ -54,39 +54,6 @@ services:
         value: ./uploads
       - key: MAX_FILE_SIZE_MB
         value: "50"
-
-  # ── Celery Worker ────────────────────────────────────────────────────
-  - type: worker
-    name: docflow-worker
-    runtime: docker
-    dockerfilePath: ./backend/Dockerfile.worker
-    dockerContext: ./backend
-    plan: free
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: docflow-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: docflow-redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: docflow-redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: redis
-          name: docflow-redis
-          property: connectionString
-      - key: SECRET_KEY
-        fromService:
-          type: web
-          name: docflow-backend
-          envVarKey: SECRET_KEY
 
   # ── Next.js Frontend ─────────────────────────────────────────────────
   - type: web
